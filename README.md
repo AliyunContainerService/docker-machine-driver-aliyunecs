@@ -59,7 +59,7 @@ docker-machine create -d aliyunecs --help
 ``--aliyunecs-access-key-secret``|Your secret access key for the Aliyun ECS API.| **yes** |
 ``--aliyunecs-api-endpoint``|The custom API endpoint.| |
 ``--aliyunecs-description`` | The description of instance.| |
- ``--aliyunecs-disk-size``| The data disk size for /var/lib/docker (in GB),[more detail]()||
+ ``--aliyunecs-disk-size``| The data disk size for /var/lib/docker (in GB)||
  ``--aliyunecs-disk-category``|The category of data disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
 ``--aliyunecs-image-id``| The image ID of the instance to use Default is the latest Ubuntu 14.04 provided by system||
 ``--aliyunecs-io-optimized``| The I/O optimized instance type, the valid values could be `none` (default) or `optimized`||
