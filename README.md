@@ -106,7 +106,7 @@ Each environment variable may be overloaded by its option equivalent at runtime.
 
 ## Kernels
 
-The default ubuntu image runs kernel 3.18.xx but advanced swarm/networking features require a newer kernel.
+The default ubuntu image runs kernel 3.16+ but advanced swarm/networking features require a newer kernel.
 
 Optionally, `docker-machine ssh` in and `apt-get install -qy linux-image-generic-lts-wily && reboot`
 
