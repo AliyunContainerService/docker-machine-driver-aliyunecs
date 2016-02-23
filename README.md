@@ -18,7 +18,7 @@ docker-machine create -d aliyunecs machine-aliyunecs
 
 ## Installation
 
-The easiest way to install the clc docker-machine driver is to:
+The easiest way to install the aliyun docker-machine driver is to:
 
 ```
 go install github.com/denverdino/docker-machine-driver-aliyunecs
@@ -35,11 +35,11 @@ binaries also available,you can download from [drone.io](https://drone.io/github
 docker-machine create -d aliyunecs --help
 ```
  Option Name                                          | Description                                           | required 
-------------------------------------------------------|------------------------------------------------------|----
+------------------------------------------------------|------------------------------------------------------|----|
 ``--aliyunecs-access-key-id`` | Your access key ID for the Aliyun ECS API.  |**yes**|
 ``--aliyunecs-access-key-secret``|Your secret access key for the Aliyun ECS API.| **yes** |
-``--aliyunecs-api-endpoint``|The custom API endpoint.|**no** |
-``--aliyunecs-description`` | The description of instance.|**no** |
+``--aliyunecs-api-endpoint``|The custom API endpoint.| |
+``--aliyunecs-description`` | The description of instance.| |
  ``--aliyunecs-disk-size``| The data disk size for /var/lib/docker (in GB),[more detail]()||
  ``--aliyunecs-disk-category``|The category of data disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
 ``--aliyunecs-image-id``| The image ID of the instance to use Default is the latest Ubuntu 14.04 provided by system||
