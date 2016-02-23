@@ -28,6 +28,25 @@ binaries also available,you can download from [drone.io](https://drone.io/github
 
 
 ## Example Usage 
+eg. Export your credentials into your shell environment 
+
+```bash
+export ECS_ACCESS_KEY_ID ='<Your access key ID>'
+export ECS_ACCESS_KEY_SECRET	='<Your secret access key>'
+export ECS_API_ENDPOINT ='<The custom API endpoint>'
+export ECS_DESCRIPTION ='<The description of instance>'
+export ECS_DISK_SIZE ='<The data disk size>'
+export ECS_DISK_CATEGORY ='<The category of data disk>'
+
+
+docker-machine create -d aliyunecs <machine-name>
+```
+
+or  pass as cmdline flags
+
+```bash
+docker-machine create -d aliyunecs --aliyunecs-tag provider=aliyuncos --aliyunecs-tag version=1.0 --aliyunecs-disk-size=20 --aliyunecs-io-optimized=optimized --aliyunecs-description=aliyunecs-machine-driver --aliyunecs-instance-type=<InstanceType> --aliyunecs-access-key-id=<Your access key ID for the Aliyun ECS API> --aliyunecs-access-key-secret=<Your secret access key for the Aliyun ECS API>  --aliyunecs-disk-category=<DiskCategory>  --aliyunecs-region=<Region>--aliyunecs-ssh-password=<SSH Password> <machine-name>
+```
 
 ## Options
 
