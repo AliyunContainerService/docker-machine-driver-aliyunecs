@@ -1238,12 +1238,12 @@ func (d *Driver) autoFdisk(sshClient ssh.Client) {
 	log.Debugf("%s | Auto Fdisk command err, output: %v: %s", d.MachineName, err, output)
 }
 
-// Install Kernel 3.19
+// Install Kernel 4.4
 func (d *Driver) upgradeKernel(sshClient ssh.Client, tcpAddr string) {
 	log.Debugf("%s | Upgrade kernel version ...", d.MachineName)
 	output, err := sshClient.Output("for i in 1 2 3 4 5; do apt-get update -y && break || sleep 5; done")
 	log.Infof("%s | apt-get update update err, output: %v: %s", d.MachineName, err, output)
-	output, err = sshClient.Output("for i in 1 2 3 4 5; do apt-get install -y linux-generic-lts-vivid && break || sleep 5; done")
+	output, err = sshClient.Output("for i in 1 2 3 4 5; do apt-get install -y linux-generic-lts-xenial && break || sleep 5; done")
 	log.Infof("%s | Upgrade kernel err, output: %v: %s", d.MachineName, err, output)
 	time.Sleep(5 * time.Second)
 	log.Infof("%s | Restart VM instance for kernel update ...", d.MachineName)
