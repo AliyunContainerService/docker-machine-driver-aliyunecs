@@ -61,6 +61,8 @@ docker-machine create -d aliyunecs --help
 ``--aliyunecs-description`` | The description of instance.| |
  ``--aliyunecs-disk-size``| The data disk size for /var/lib/docker (in GB)||
  ``--aliyunecs-disk-category``|The category of data disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
+ ``--aliyunecs-system-disk-size``| The system disk size for /var/lib/docker (in GB)||
+ ``--aliyunecs-system-disk-category``|The category of system disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
 ``--aliyunecs-image-id``| The image ID of the instance to use Default is the latest Ubuntu 14.04 provided by system||
 ``--aliyunecs-io-optimized``| The I/O optimized instance type, the valid values could be `none` (default) or `optimized`||
 ``--aliyunecs-instance-type``| The instance type to run.  Default: `ecs.t1.small`||
@@ -87,6 +89,8 @@ docker-machine create -d aliyunecs --help
 | `--aliyunecs-description`           | `ECS_DESCRIPTION`           | -                |
 | `--aliyunecs-disk-size`             | `ECS_DISK_SIZE`             | -                |
 | `--aliyunecs-disk-category`         | `ECS_DISK_CATEGORY`         | -                |
+| `--aliyunecs-system-disk-size`             | `ECS_SYSTEM_DISK_SIZE`             | -                |
+| `--aliyunecs-system-disk-category`         | `ECS_SYSTEM_DISK_CATEGORY`         | -                |
 | `--aliyunecs-image-id`              | `ECS_IMAGE_ID`              | -                |
 | `--aliyunecs-aliyunecs-io-optimized`| `ECS_IO_OPTIMIZED`          | `none`           |
 | `--aliyunecs-instance-type`         | `ECS_INSTANCE_TYPE`         | `ecs.t1.small`   |

@@ -78,6 +78,7 @@ type Driver struct {
 	IoOptimized             bool
 	APIEndpoint             string
 	SystemDiskCategory      ecs.DiskCategory
+	SystemDiskSize          int
 
 	client    *ecs.Client
 	slbClient *slb.Client
@@ -187,6 +188,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Data disk size for instance in GB",
 			Value:  0,
 			EnvVar: "ECS_DISK_SIZE",
+		},
+		mcnflag.IntFlag{
+			Name:   "aliyunecs-system-disk-size",
+			Usage:  "System disk size for instance in GB",
+			Value:  40,
+			EnvVar: "ECS_SYSTEM_DISK_SIZE",
 		},
 		mcnflag.StringFlag{
 			Name:   "aliyunecs-system-disk-category",
@@ -309,6 +316,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.IoOptimized = (ioOptimized == "true" || ioOptimized == "optimized")
 	d.Description = flags.String("aliyunecs-description")
 	d.SystemDiskCategory = ecs.DiskCategory(flags.String("aliyunecs-system-disk-category"))
+	d.SystemDiskSize = flags.Int("aliyunecs-system-disk-size")
 
 	if d.SystemDiskCategory == "" && d.IoOptimized {
 		d.SystemDiskCategory = ecs.DiskCategoryCloudSSD
@@ -457,6 +465,10 @@ func (d *Driver) Create() error {
 
 	if d.SystemDiskCategory != "" {
 		args.SystemDisk.Category = d.SystemDiskCategory
+	}
+
+	if d.SystemDiskSize > 0 {
+		args.SystemDisk.Size = d.SystemDiskSize
 	}
 
 	if d.DiskSize > 0 { // Allocate Data Disk
