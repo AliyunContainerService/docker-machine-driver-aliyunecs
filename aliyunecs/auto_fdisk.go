@@ -15,7 +15,7 @@ wq
 EOF
 
 sleep 5
-mkfs.ext4 \${DISK_ATTACH_POINT}1
+mkfs.ext4 -i 8192 \${DISK_ATTACH_POINT}1
 }
 
 #config /etc/fstab and mount device
