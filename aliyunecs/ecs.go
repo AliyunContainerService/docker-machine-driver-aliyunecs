@@ -460,6 +460,7 @@ func (d *Driver) Create() error {
 		VSwitchId:          VSwitchId,
 		ZoneId:             d.Zone,
 		IoOptimized:        ioOptimized,
+		InternetMaxBandwidthOut: d.InternetMaxBandwidthOut,
 		ClientToken:        d.getClient().GenerateClientToken(),
 	}
 
@@ -484,11 +485,6 @@ func (d *Driver) Create() error {
 
 		args.DataDisk = []ecs.DataDiskType{disk}
 
-	}
-
-	// Set InternetMaxBandwidthOut only for classic network
-	if VSwitchId == "" {
-		args.InternetMaxBandwidthOut = d.InternetMaxBandwidthOut
 	}
 
 	// Create instance
