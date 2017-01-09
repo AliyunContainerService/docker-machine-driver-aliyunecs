@@ -3,6 +3,7 @@ package aliyunecs
 import (
 	"crypto/rand"
 	"errors"
+	"strings"
 
 	"github.com/denverdino/aliyungo/common"
 )
@@ -15,8 +16,8 @@ var (
 	errComplete       = errors.New("Complete")
 )
 
-const defaultUbuntuImageID = "ubuntu1404_64_20G_aliaegis_20150325.vhd"
-const defaultUbuntuImagePrefix = "ubuntu1404_64_20G_"
+const defaultUbuntuImageID = "ubuntu_160401_64_40G_cloudinit_20161115.vhd"
+const defaultUbuntuImagePrefix = "ubuntu_160401_64_40G_"
 
 func validateECSRegion(region string) (common.Region, error) {
 	for _, v := range common.ValidRegions {
@@ -38,4 +39,8 @@ func randomPassword() string {
 		bytes[k] = dictionary[v%byte(len(dictionary))]
 	}
 	return string(bytes)
+}
+
+func isUbuntuImage(image string) bool {
+	return strings.HasPrefix(image, "ubuntu")
 }

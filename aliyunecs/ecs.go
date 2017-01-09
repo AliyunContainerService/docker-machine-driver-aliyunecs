@@ -72,7 +72,6 @@ type Driver struct {
 	SLBIPAddress            string
 	Tags                    map[string]string
 	DiskSize                int
-	UpgradeKernel           bool
 	DiskCategory            ecs.DiskCategory
 	Description             string
 	IoOptimized             bool
@@ -207,7 +206,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.BoolFlag{
 			Name:   "aliyunecs-upgrade-kernel",
-			Usage:  "Upgrade kernel for instance (Ubuntu 14.04 only)",
+			Usage:  "Upgrade kernel for Ubuntu 14.04 instance (deprecated)",
 			EnvVar: "ECS_UPGRADE_KERNEL",
 		},
 		mcnflag.StringFlag{
@@ -246,7 +245,7 @@ func (d *Driver) GetImageID(image string) string {
 		ImageOwnerAlias: ecs.ImageOwnerSystem,
 	}
 
-	// Scan registed images with prefix of ubuntu1404_64_20G_
+	// Scan registed images with prefix of default Ubuntu image
 	for {
 		images, pagination, err := d.getClient().DescribeImages(&args)
 		if err != nil {
@@ -266,7 +265,7 @@ func (d *Driver) GetImageID(image string) string {
 		}
 	}
 
-	//Default use the config Ubuntu 14.04 64bits image
+	//Use default image
 
 	image = defaultUbuntuImageID
 
@@ -309,7 +308,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("aliyunecs-disk-size")
 	d.DiskCategory = ecs.DiskCategory(flags.String("aliyunecs-disk-category"))
 	tags := flags.StringSlice("aliyunecs-tag")
-	d.UpgradeKernel = flags.Bool("aliyunecs-upgrade-kernel")
+	upgradeKernel := flags.Bool("aliyunecs-upgrade-kernel")
+	if upgradeKernel {
+		log.Warnf("%s | The --aliyunecs-upgrade-kernel is deprecated. Please use the Ubuntu 16.04 as the OS image for ECS instance", d.MachineName)
+	}
 
 	ioOptimized := strings.ToLower(flags.String("aliyunecs-io-optimized"))
 
@@ -449,19 +451,19 @@ func (d *Driver) Create() error {
 	}
 
 	args := ecs.CreateInstanceArgs{
-		RegionId:           d.Region,
-		InstanceName:       d.GetMachineName(),
-		Description:        d.Description,
-		ImageId:            imageID,
-		InstanceType:       d.InstanceType,
-		SecurityGroupId:    d.SecurityGroupId,
-		InternetChargeType: internetChargeType,
-		Password:           d.SSHPassword,
-		VSwitchId:          VSwitchId,
-		ZoneId:             d.Zone,
-		IoOptimized:        ioOptimized,
+		RegionId:                d.Region,
+		InstanceName:            d.GetMachineName(),
+		Description:             d.Description,
+		ImageId:                 imageID,
+		InstanceType:            d.InstanceType,
+		SecurityGroupId:         d.SecurityGroupId,
+		InternetChargeType:      internetChargeType,
+		Password:                d.SSHPassword,
+		VSwitchId:               VSwitchId,
+		ZoneId:                  d.Zone,
+		IoOptimized:             ioOptimized,
 		InternetMaxBandwidthOut: d.InternetMaxBandwidthOut,
-		ClientToken:        d.getClient().GenerateClientToken(),
+		ClientToken:             d.getClient().GenerateClientToken(),
 	}
 
 	if d.SystemDiskCategory != "" {
@@ -530,7 +532,7 @@ func (d *Driver) Create() error {
 
 					ssh.SetDefaultClient(ssh.Native)
 
-					d.uploadKeyPair()
+					d.configECSInstance(imageID)
 
 					log.Infof("%s | Created instance %s successfully with public IP address %s and private IP address %s",
 						d.MachineName,
@@ -1180,7 +1182,7 @@ func generateId() string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func (d *Driver) uploadKeyPair() error {
+func (d *Driver) configECSInstance(imageId string) error {
 	ipAddr := d.IPAddress
 	port, _ := d.GetSSHPort()
 	tcpAddr := fmt.Sprintf("%s:%d", ipAddr, port)
@@ -1199,6 +1201,25 @@ func (d *Driver) uploadKeyPair() error {
 		return err
 	}
 
+	err = d.uploadKeyPair(sshClient)
+	if err != nil {
+		return err
+	}
+
+	if isUbuntuImage(imageId) {
+		d.fixAptConf(sshClient)
+	}
+
+	d.fixRoutingRules(sshClient)
+
+	if d.DiskSize > 0 {
+		d.autoFdisk(sshClient)
+	}
+
+	return nil
+}
+
+func (d *Driver) uploadKeyPair(sshClient ssh.Client) error {
 	command := fmt.Sprintf("mkdir -p ~/.ssh; echo '%s' > ~/.ssh/authorized_keys", string(d.PublicKey))
 
 	log.Debugf("%s | Upload the public key with command: %s", d.MachineName, command)
@@ -1207,23 +1228,12 @@ func (d *Driver) uploadKeyPair() error {
 
 	log.Debugf("%s | Upload command err, output: %v: %s", d.MachineName, err, output)
 
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	log.Debugf("%s | Upload the public key with command: %s", d.MachineName, command)
-
-	d.fixRoutingRules(sshClient)
-
-	if d.DiskSize > 0 {
-		d.autoFdisk(sshClient)
-	}
-
-	if d.UpgradeKernel {
-		d.upgradeKernel(sshClient, tcpAddr)
-	}
-
-	return nil
+func (d *Driver) fixAptConf(sshClient ssh.Client) {
+	output, err := sshClient.Output("sed -i 's/Acquire::http::Proxy/#Acquire::http::Proxy/' /etc/apt/apt.conf")
+	log.Debugf("%s | Update the apt.conf command err, output: %v: %s", d.MachineName, err, output)
 }
 
 // Fix the routing rules
@@ -1244,17 +1254,4 @@ func (d *Driver) autoFdisk(sshClient ssh.Client) {
 	output, err := sshClient.Output(script)
 	output, err = sshClient.Output("bash ~/machine_autofdisk.sh")
 	log.Debugf("%s | Auto Fdisk command err, output: %v: %s", d.MachineName, err, output)
-}
-
-// Install Kernel 4.4
-func (d *Driver) upgradeKernel(sshClient ssh.Client, tcpAddr string) {
-	log.Debugf("%s | Upgrade kernel version ...", d.MachineName)
-	output, err := sshClient.Output("for i in 1 2 3 4 5; do apt-get update -y && break || sleep 5; done")
-	log.Infof("%s | apt-get update update err, output: %v: %s", d.MachineName, err, output)
-	output, err = sshClient.Output("for i in 1 2 3 4 5; do apt-get install -y linux-generic-lts-xenial && break || sleep 5; done")
-	log.Infof("%s | Upgrade kernel err, output: %v: %s", d.MachineName, err, output)
-	time.Sleep(5 * time.Second)
-	log.Infof("%s | Restart VM instance for kernel update ...", d.MachineName)
-	d.Restart()
-	time.Sleep(30 * time.Second)
 }

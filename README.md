@@ -63,7 +63,7 @@ docker-machine create -d aliyunecs --help
  ``--aliyunecs-disk-category``|The category of data disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
  ``--aliyunecs-system-disk-size``| The system disk size for /var/lib/docker (in GB)||
  ``--aliyunecs-system-disk-category``|The category of system disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
-``--aliyunecs-image-id``| The image ID of the instance to use Default is the latest Ubuntu 14.04 provided by system||
+``--aliyunecs-image-id``| The image ID of the instance to use Default is the latest Ubuntu 16.04 provided by system||
 ``--aliyunecs-io-optimized``| The I/O optimized instance type, the valid values could be `none` (default) or `optimized`||
 ``--aliyunecs-instance-type``| The instance type to run.  Default: `ecs.t1.small`||
 ``--aliyunecs-internet-max-bandwidth``| Maxium bandwidth for Internet access (in Mbps), default 1||
@@ -110,9 +110,7 @@ Each environment variable may be overloaded by its option equivalent at runtime.
 
 ## Kernels
 
-The default ubuntu image runs kernel 3.16+ but advanced swarm/networking features require a newer kernel.
-
-Optionally, `docker-machine ssh` in and `apt-get install -qy linux-image-generic-lts-wily && reboot`
+The default ubuntu 16.04 image runs kernel 4.4
 
 ## Hacking
 
