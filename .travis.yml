@@ -1,0 +1,21 @@
+language: go
+
+go:
+  - 1.7.1
+
+# let us have speedy Docker-based Travis workers
+sudo: false
+
+script:
+  - go get ./...
+  - go vet ./...
+  - dmver=$(cd $GOPATH/src/github.com/docker/machine && git describe --abbrev=0 --tags)
+  - echo "VERSION docker-machine '$dmver'"
+  - OS="darwin linux windows"
+  - ARCH="amd64"
+  - >
+    for GOOS in $OS; do 
+        arch="$GOOS-$ARCH" && binary="bin/docker-machine-driver-aliyunecs.$arch"
+        GOOS=$GOOS GOARCH=$GOARCH go build -o $binary
+        tar czvf bin/docker-machine-driver-aliyunecs_$arch.tgz $binary
+    done
