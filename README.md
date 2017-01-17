@@ -27,7 +27,14 @@ The easiest way to install the aliyun docker-machine driver is to:
 go get github.com/denverdino/docker-machine-driver-aliyunecs
 ```
 
-binaries also available,you can download from [drone.io](https://drone.io/github.com/denverdino/docker-machine-driver-aliyun/files)
+binaries also available,you can download from below links:
+
+* [docker-machine-driver-aliyunecs_darwin-amd64](http://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_darwin-amd64.tgz)
+
+* [docker-machine-driver-aliyunecs_linux-amd64](http://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_linux-amd64.tgz)
+
+* [docker-machine-driver-aliyunecs_windows-amd64](http://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_windows-amd64.tgz)
+
 
 
 ## Example Usage 
