@@ -29,11 +29,11 @@ go get github.com/denverdino/docker-machine-driver-aliyunecs
 
 binaries also available,you can download from below links:
 
-* [docker-machine-driver-aliyunecs_darwin-amd64](http://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_darwin-amd64.tgz)
+* Mac OSX 64 bit: [docker-machine-driver-aliyunecs_darwin-amd64](https://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_darwin-amd64.tgz)
 
-* [docker-machine-driver-aliyunecs_linux-amd64](http://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_linux-amd64.tgz)
+* Linux 64 bit: [docker-machine-driver-aliyunecs_linux-amd64](https://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_linux-amd64.tgz)
 
-* [docker-machine-driver-aliyunecs_windows-amd64](http://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_windows-amd64.tgz)
+* Windows 64 bit: [docker-machine-driver-aliyunecs_windows-amd64](https://docker-machine-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_windows-amd64.tgz)
 
 
 
