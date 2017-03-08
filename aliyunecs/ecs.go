@@ -1067,10 +1067,19 @@ func (d *Driver) configureSecurityGroup(vpcId string, groupName string) error {
 	for _, permission := range perms {
 		log.Debugf("%s | Authorizing group %s with permission: %v", d.MachineName, securityGroup.SecurityGroupName, permission)
 		args := permission.createAuthorizeSecurityGroupArgs(d.Region, d.SecurityGroupId)
+		args.NicType = ecs.NicTypeInternet
 		if err := d.getClient().AuthorizeSecurityGroup(args); err != nil {
+			log.Warnf("%s | Failed to authorizing group %s with permission: %v", d.MachineName, securityGroup.SecurityGroupName, permission, err)
 			return err
 		}
-
+		args.NicType = ecs.NicTypeIntranet
+		//如果是经典网络，则需要去掉2376的内网入规则
+		if (d.VpcId == "" && d.VSwitchId == "") && permission.FromPort != dockerPort && permission.ToPort != dockerPort {
+			if err := d.getClient().AuthorizeSecurityGroup(args); err != nil {
+				log.Warnf("%s | Failed to authorizing group %s with permission: %v", d.MachineName, securityGroup.SecurityGroupName, permission, err)
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -1097,24 +1106,16 @@ func (p *IpPermission) createAuthorizeSecurityGroupArgs(regionId common.Region, 
 func (d *Driver) configureSecurityGroupPermissions(group *ecs.DescribeSecurityGroupAttributeResponse) []IpPermission {
 	hasSSHPort := false
 	hasDockerPort := false
-	hasSwarmPort := false
-	hasAllIncomingPort := false
 	for _, p := range group.Permissions.Permission {
 		portRange := strings.Split(p.PortRange, "/")
 
 		log.Debugf("%s | portRange %v", d.MachineName, portRange)
 		fromPort, _ := strconv.Atoi(portRange[0])
 		switch fromPort {
-		case -1:
-			if portRange[1] == "-1" && p.IpProtocol == "ALL" && p.Policy == "Accept" {
-				hasAllIncomingPort = true
-			}
 		case 22:
 			hasSSHPort = true
 		case dockerPort:
 			hasDockerPort = true
-		case swarmPort:
-			hasSwarmPort = true
 		}
 	}
 
@@ -1138,27 +1139,61 @@ func (d *Driver) configureSecurityGroupPermissions(group *ecs.DescribeSecurityGr
 		})
 	}
 
-	if !hasSwarmPort && d.SwarmMaster {
-		perms = append(perms, IpPermission{
-			IpProtocol: ecs.IpProtocolTCP,
-			FromPort:   swarmPort,
-			ToPort:     swarmPort,
-			IpRange:    ipRange,
-		})
-	}
+	//80
+	perms = append(perms, IpPermission{
+		IpProtocol: ecs.IpProtocolTCP,
+		FromPort:   80,
+		ToPort:     80,
+		IpRange:    ipRange,
+	})
 
-	if !hasAllIncomingPort {
-		perms = append(perms, IpPermission{
-			IpProtocol: ecs.IpProtocolAll,
-			FromPort:   -1,
-			ToPort:     -1,
-			IpRange:    ipRange,
-		})
+	//443
+	perms = append(perms, IpPermission{
+		IpProtocol: ecs.IpProtocolTCP,
+		FromPort:   443,
+		ToPort:     443,
+		IpRange:    ipRange,
+	})
+
+	//ICMP
+	perms = append(perms, IpPermission{
+		IpProtocol: ecs.IpProtocolICMP,
+		FromPort:   -1,
+		ToPort:     -1,
+		IpRange:    ipRange,
+	})
+
+	//如果是容器网段的话，需要设置容器网段开放安全组
+	if d.VpcId != "" || d.VSwitchId != "" {
+		containerIPRange, err := getContainerCIDR(d.RouteCIDR)
+		if err == nil {
+			perms = append(perms, IpPermission{
+				IpProtocol: ecs.IpProtocolAll,
+				FromPort:   -1,
+				ToPort:     -1,
+				IpRange:    containerIPRange,
+			})
+		} else {
+			log.Errorf("%s failed to get container bip %++v", group.SecurityGroupId, err)
+		}
 	}
 
 	log.Debugf("%s | Configuring new permissions: %v", d.MachineName, perms)
 
 	return perms
+}
+
+func getContainerCIDR(cidrBlock string) (string, error) {
+	ip, _, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		return "", err
+	}
+
+	ip = ip.To4()
+	ip[2] = 0
+	ip[3] = 0
+
+	return fmt.Sprintf("%s/16", ip.String()), nil
 }
 
 func (d *Driver) deleteSecurityGroup() error {
