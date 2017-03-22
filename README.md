@@ -127,8 +127,8 @@ The default ubuntu 16.04 image runs kernel 4.4
 ### Get the sources
 
 ```bash
-go get github.com/denverdino/docker-machine-driver-aliyunecs
-cd $GOPATH/src/github.com/denverdino/docker-machine-driver-aliyunecs
+go get github.com/AliyunContainerService/docker-machine-driver-aliyunecs
+cd $GOPATH/src/github.com/AliyunContainerService/docker-machine-driver-aliyunecs
 ```
 
 ### Test the driver
@@ -137,14 +137,14 @@ To test the driver make sure your current build directory has the highest
 priority in your ``$PATH`` so that docker-machine can find it.
 
 ```
-export PATH=$GOPATH/src/github.com/denverdino/docker-machine-driver-aliyunecs:$PATH
+export PATH=$GOPATH/src/github.com/AliyunContainerService/docker-machine-driver-aliyunecs:$PATH
 ```
 
 ## Related links
 
 - **Docker Machine**: https://docs.docker.com/machine/
-- **Contribute**: https://github.com/denverdino/docker-machine-driver-aliyunecs
-- **Report bugs**: https://github.com/denverdino/docker-machine-driver-aliyunecs/issues
+- **Contribute**: https://github.com/AliyunContainerService/docker-machine-driver-aliyunecs
+- **Report bugs**: https://github.com/AliyunContainerService/docker-machine-driver-aliyunecs/issues
 
 ## License
 

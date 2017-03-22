@@ -1,12 +1,12 @@
 
-FROM golang:1.7.4
+FROM golang:1.7.5
 MAINTAINER denverdino@gmail.com
 
 ENV OS "darwin linux windows"
 ENV ARCH "amd64"
 
-COPY . ${GOPATH}/src/github.com/denverdino/docker-machine-driver-aliyunecs
-WORKDIR ${GOPATH}/src/github.com/denverdino/docker-machine-driver-aliyunecs
+COPY . ${GOPATH}/src/github.com/AliyunContainerService/docker-machine-driver-aliyunecs
+WORKDIR ${GOPATH}/src/github.com/AliyunContainerService/docker-machine-driver-aliyunecs
 RUN set -ex \
 	&& uname -a \
 	&& go version \

@@ -154,8 +154,8 @@ func TestConfigureSecurityGroupPermissionsEmpty(t *testing.T) {
 	}
 	perms := d.configureSecurityGroupPermissions(&securityGroup)
 	t.Logf("Permissions: %v", perms)
-	if len(perms) != 3 {
-		t.Fatalf("expected 2 permissions; received %d", len(perms))
+	if len(perms) != 5 {
+		t.Fatalf("expected 5 permissions; received %d", len(perms))
 	}
 }
 
