@@ -9,7 +9,7 @@ parent="smn_machine_drivers"
 <![end-metadata]-->
 # Docker Machine Driver of Aliyun ECS
 
-[![Build Status](https://travis-ci.org/denverdino/docker-machine-driver-aliyunecs.svg?branch=master)](https://travis-ci.org/denverdino/docker-machine-driver-aliyunecs)
+[![Build Status](https://travis-ci.org/AliyunContainerService/docker-machine-driver-aliyunecs.svg?branch=master)](https://travis-ci.org/AliyunContainerService/docker-machine-driver-aliyunecs)
 
 Create machines on [Aliyun Elastic Compute Service (ECS)](http://www.aliyun.com/).  You will need an Access Key ID, Secret Access Key and a Region ID.  If you want to setup instance on the VPC network, you will need the VPC ID and VSwitch ID; Please login to the Aliyun console -> Products and Services -> VPC and select the one where you would like to launch the instance.
 
