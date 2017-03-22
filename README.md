@@ -24,7 +24,7 @@ docker-machine create -d aliyunecs machine-aliyunecs
 The easiest way to install the aliyun docker-machine driver is to:
 
 ```
-go get github.com/denverdino/docker-machine-driver-aliyunecs
+go get github.com/AliyunContainerService/docker-machine-driver-aliyunecs
 ```
 
 binaries also available,you can download from below links:
