@@ -1,0 +1,6 @@
+package: github.com/AliyunContainerService/docker-machine-driver-aliyunecs
+
+import:
+- package: github.com/denverdino/aliyungo
+- package: github.com/docker/machine
+  version: v0.13.0

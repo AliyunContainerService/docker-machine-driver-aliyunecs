@@ -1,1 +1,3 @@
 bin
+.idea
+docker-machine-driver-aliyunecs

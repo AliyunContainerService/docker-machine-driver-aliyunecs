@@ -1,5 +1,5 @@
 
-FROM golang:1.7.5
+FROM golang:1.9.2
 MAINTAINER denverdino@gmail.com
 
 ENV OS "darwin linux windows"

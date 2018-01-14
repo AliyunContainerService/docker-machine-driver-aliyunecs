@@ -41,12 +41,12 @@ binaries also available,you can download from below links:
 eg. Export your credentials into your shell environment 
 
 ```bash
-export ECS_ACCESS_KEY_ID ='<Your access key ID>'
-export ECS_ACCESS_KEY_SECRET	='<Your secret access key>'
-export ECS_API_ENDPOINT ='<The custom API endpoint>'
-export ECS_DESCRIPTION ='<The description of instance>'
-export ECS_DISK_SIZE ='<The data disk size>'
-export ECS_DISK_CATEGORY ='<The category of data disk>'
+export ECS_ACCESS_KEY_ID='<Your access key ID>'
+export ECS_ACCESS_KEY_SECRET='<Your secret access key>'
+export ECS_API_ENDPOINT='<The custom API endpoint>'
+export ECS_DESCRIPTION='<The description of instance>'
+export ECS_DISK_SIZE='<The data disk size>'
+export ECS_DISK_CATEGORY='<The category of data disk>'
 
 
 docker-machine create -d aliyunecs <machine-name>

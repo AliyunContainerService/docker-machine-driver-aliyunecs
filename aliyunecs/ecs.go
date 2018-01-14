@@ -30,7 +30,7 @@ import (
 const (
 	driverName               = "aliyunecs"
 	defaultRegion            = "cn-hangzhou"
-	defaultInstanceType      = "ecs.t1.small"
+	defaultInstanceType      = "ecs.n4.small"
 	defaultRootSize          = 20
 	internetChargeType       = "PayByTraffic"
 	ipRange                  = "0.0.0.0/0"
@@ -212,7 +212,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   "aliyunecs-io-optimized",
 			Usage:  "I/O optimized instance",
-			Value:  "",
+			Value:  "true",
 			EnvVar: "ECS_IO_OPTIMIZED",
 		},
 		mcnflag.StringFlag{
@@ -308,10 +308,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("aliyunecs-disk-size")
 	d.DiskCategory = ecs.DiskCategory(flags.String("aliyunecs-disk-category"))
 	tags := flags.StringSlice("aliyunecs-tag")
-	upgradeKernel := flags.Bool("aliyunecs-upgrade-kernel")
-	if upgradeKernel {
-		log.Warnf("%s | The --aliyunecs-upgrade-kernel is deprecated. Please use the Ubuntu 16.04 as the OS image for ECS instance", d.MachineName)
-	}
+	//upgradeKernel := false //flags.Bool("aliyunecs-upgrade-kernel")
+	//if upgradeKernel {
+	//	log.Warnf("%s | The --aliyunecs-upgrade-kernel is deprecated. Please use the Ubuntu 16.04 as the OS image for ECS instance", d.MachineName)
+	//}
 
 	ioOptimized := strings.ToLower(flags.String("aliyunecs-io-optimized"))
 

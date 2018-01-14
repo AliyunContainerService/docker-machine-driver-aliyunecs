@@ -16,8 +16,8 @@ var (
 	errComplete       = errors.New("Complete")
 )
 
-const defaultUbuntuImageID = "ubuntu_160401_64_40G_cloudinit_20161115.vhd"
-const defaultUbuntuImagePrefix = "ubuntu_160401_64_40G_"
+const defaultUbuntuImageID = "ubuntu_16_0402_64_20G_alibase_20171227.vhd"
+const defaultUbuntuImagePrefix = "ubuntu_16_0402_64"
 
 func validateECSRegion(region string) (common.Region, error) {
 	for _, v := range common.ValidRegions {
