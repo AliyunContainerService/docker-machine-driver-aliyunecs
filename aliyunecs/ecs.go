@@ -55,6 +55,8 @@ type Driver struct {
 	Region                  common.Region
 	ImageID                 string
 	SSHPassword             string
+	SSHKeyPairName          string
+	SSHPrivateKeyPath       string
 	PublicKey               []byte
 	InstanceId              string
 	InstanceType            string
@@ -72,6 +74,7 @@ type Driver struct {
 	SLBIPAddress            string
 	Tags                    map[string]string
 	DiskSize                int
+	DiskFS                  string
 	DiskCategory            ecs.DiskCategory
 	Description             string
 	IoOptimized             bool
@@ -152,8 +155,18 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.StringFlag{
 			Name:   "aliyunecs-ssh-password",
-			Usage:  "set the password of the ssh user",
+			Usage:  "Set the password of the ssh user",
 			EnvVar: "ECS_SSH_PASSWORD",
+		},
+		mcnflag.StringFlag{
+			Name:   "aliyunecs-ssh-keypair",
+			Usage:  "Set the SSH key pair name",
+			EnvVar: "ECS_SSH_KEYPAIR",
+		},
+		mcnflag.StringFlag{
+			Name:   "aliyunecs-ssh-keypath",
+			Usage:  "File path of SSH private key",
+			EnvVar: "ECS_SSH_KEYPATH",
 		},
 		mcnflag.BoolFlag{
 			Name:   "aliyunecs-private-address-only",
@@ -187,6 +200,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Usage:  "Data disk size for instance in GB",
 			Value:  0,
 			EnvVar: "ECS_DISK_SIZE",
+		},
+		mcnflag.StringFlag{
+			Name:   "aliyunecs-disk-fs",
+			Usage:  "File system for data disk (ext4 or xfs)",
+			Value:  "ext4",
+			EnvVar: "ECS_DISK_FS",
 		},
 		mcnflag.IntFlag{
 			Name:   "aliyunecs-system-disk-size",
@@ -300,12 +319,15 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SwarmDiscovery = flags.String("swarm-discovery")
 	d.SSHUser = defaultSSHUser
 	d.SSHPassword = flags.String("aliyunecs-ssh-password")
+	d.SSHKeyPairName = flags.String("aliyunecs-ssh-keypair")
+	d.SSHPrivateKeyPath = flags.String("aliyunecs-ssh-keypath")
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("aliyunecs-private-address-only")
 	d.InternetMaxBandwidthOut = flags.Int("aliyunecs-internet-max-bandwidth")
 	d.RouteCIDR = flags.String("aliyunecs-route-cidr")
 	d.SLBID = flags.String("aliyunecs-slb-id")
 	d.DiskSize = flags.Int("aliyunecs-disk-size")
+	d.DiskFS = flags.String("aliyunecs-disk-fs")
 	d.DiskCategory = ecs.DiskCategory(flags.String("aliyunecs-disk-category"))
 	tags := flags.StringSlice("aliyunecs-tag")
 	//upgradeKernel := false //flags.Bool("aliyunecs-upgrade-kernel")
@@ -322,6 +344,10 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 
 	if d.SystemDiskCategory == "" && d.IoOptimized {
 		d.SystemDiskCategory = ecs.DiskCategoryCloudSSD
+	}
+
+	if d.DiskCategory == "" && d.IoOptimized {
+		d.DiskCategory = ecs.DiskCategoryCloudSSD
 	}
 
 	tagMap := make(map[string]string)
@@ -391,6 +417,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 			return fmt.Errorf("Unsupport 'aliyunecs-slb-id' flag when the custom API endpoint is specified")
 		}
 	}
+
+	if d.DiskFS != "xfs" && d.DiskFS != "ext4" {
+		return fmt.Errorf("Unsupport file system for data disk: %s", d.DiskFS)
+	}
+
+
+	if d.SSHPrivateKeyPath == "" && d.SSHKeyPairName != "" {
+		return fmt.Errorf("using --aliyunecs-keypair-name also requires --aliyunecs-ssh-keypath")
+	}
+
 	return nil
 }
 
@@ -425,19 +461,21 @@ func (d *Driver) Create() error {
 	if err := d.checkPrereqs(); err != nil {
 		return err
 	}
+
 	log.Infof("%s | Creating key pair for instance ...", d.MachineName)
 
 	if err := d.createKeyPair(); err != nil {
 		return fmt.Errorf("%s | Failed to create key pair: %v", d.MachineName, err)
 	}
 
+
 	log.Infof("%s | Configuring security groups instance ...", d.MachineName)
 	if err := d.configureSecurityGroup(VpcId, d.SecurityGroupName); err != nil {
 		return err
 	}
 
-	// TODO Support data disk
-	if d.SSHPassword == "" {
+	// Create random password if no input
+	if d.SSHPassword == "" && d.SSHKeyPairName == "" {
 		d.SSHPassword = randomPassword()
 		log.Infof("%s | Launching instance with generated password, please update password in console or log in with ssh key.", d.MachineName)
 	}
@@ -459,6 +497,7 @@ func (d *Driver) Create() error {
 		SecurityGroupId:         d.SecurityGroupId,
 		InternetChargeType:      internetChargeType,
 		Password:                d.SSHPassword,
+		KeyPairName:             d.SSHKeyPairName,
 		VSwitchId:               VSwitchId,
 		ZoneId:                  d.Zone,
 		IoOptimized:             ioOptimized,
@@ -520,6 +559,7 @@ func (d *Driver) Create() error {
 		if err == nil {
 			// Wait for running
 			err = d.getClient().WaitForInstance(instanceId, ecs.Running, timeout)
+
 			if err == nil {
 				log.Infof("%s | Start instance %s successfully", d.MachineName, instanceId)
 				instance, err := d.getInstance()
@@ -645,7 +685,8 @@ func (d *Driver) configNetwork(vpcId string, instanceId string) error {
 			break
 		}
 	}
-	return nil
+
+	return err
 }
 
 func (d *Driver) removeRouteEntry(vpcId string, regionId common.Region, instanceId string) error {
@@ -947,6 +988,7 @@ func (d *Driver) getClient() *ecs.Client {
 		if d.APIEndpoint != "" {
 			client.SetEndpoint(d.APIEndpoint)
 		}
+		client.SetUserAgent("AliyunContainerService/docker-machine")
 		client.SetDebug(false)
 		d.client = client
 	}
@@ -959,18 +1001,33 @@ func (d *Driver) getInstance() (*ecs.InstanceAttributesType, error) {
 
 func (d *Driver) createKeyPair() error {
 
-	log.Debugf("%s | SSH key path: %s", d.MachineName, d.GetSSHKeyPath())
+	if d.SSHPrivateKeyPath == "" {
+		log.Debugf("%s | SSH key path: %s", d.MachineName, d.GetSSHKeyPath())
 
-	if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
-		return err
+		if err := ssh.GenerateSSHKey(d.GetSSHKeyPath()); err != nil {
+			return err
+		}
+
+		publicKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
+		if err != nil {
+			return err
+		}
+
+		d.PublicKey = publicKey
+	} else {
+		log.Debugf("%s | Using SSHPrivateKeyPath: %s", d.MachineName, d.SSHPrivateKeyPath)
+		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath, d.GetSSHKeyPath()); err != nil {
+			return err
+		}
+		if err := mcnutils.CopyFile(d.SSHPrivateKeyPath+".pub", d.GetSSHKeyPath()+".pub"); err != nil {
+			return err
+		}
+		if d.SSHKeyPairName != "" {
+			log.Debugf("%s | Using existing ECS key pair: %s", d.MachineName, d.SSHKeyPairName)
+			return nil
+		}
 	}
 
-	publicKey, err := ioutil.ReadFile(d.GetSSHKeyPath() + ".pub")
-	if err != nil {
-		return err
-	}
-
-	d.PublicKey = publicKey
 	return nil
 }
 
@@ -1226,19 +1283,29 @@ func (d *Driver) configECSInstance(imageId string) error {
 
 	log.Infof("%s | Uploading SSH keypair to %s ...", d.MachineName, tcpAddr)
 
-	auth := ssh.Auth{
-		Passwords: []string{d.SSHPassword},
+	var auth *ssh.Auth
+
+	if d.SSHPrivateKeyPath == "" {
+		auth = &ssh.Auth{
+			Passwords: []string{d.SSHPassword},
+		}
+	} else {
+		auth = &ssh.Auth{
+			Keys: []string{d.SSHPrivateKeyPath},
+		}
 	}
 
-	sshClient, err := ssh.NewClient(d.GetSSHUsername(), ipAddr, port, &auth)
+	sshClient, err := ssh.NewClient(d.GetSSHUsername(), ipAddr, port, auth)
 
 	if err != nil {
 		return err
 	}
 
-	err = d.uploadKeyPair(sshClient)
-	if err != nil {
-		return err
+	if d.SSHKeyPairName == "" {
+		err = d.uploadKeyPair(sshClient)
+		if err != nil {
+			return err
+		}
 	}
 
 	if isUbuntuImage(imageId) {
@@ -1285,7 +1352,14 @@ func (d *Driver) fixRoutingRules(sshClient ssh.Client) {
 
 // Mount the addtional disk
 func (d *Driver) autoFdisk(sshClient ssh.Client) {
-	script := fmt.Sprintf("cat > ~/machine_autofdisk.sh <<MACHINE_EOF\n%s\nMACHINE_EOF\n", autoFdiskScript)
+
+	s := autoFdiskScriptExt4
+
+	if d.DiskFS == "xfs" {
+		s = autoFdiskScriptXFS
+	}
+
+	script := fmt.Sprintf("cat > ~/machine_autofdisk.sh <<MACHINE_EOF\n%s\nMACHINE_EOF\n", s)
 	output, err := sshClient.Output(script)
 	output, err = sshClient.Output("bash ~/machine_autofdisk.sh")
 	log.Debugf("%s | Auto Fdisk command err, output: %v: %s", d.MachineName, err, output)

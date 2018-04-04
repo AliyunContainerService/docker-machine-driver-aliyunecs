@@ -43,11 +43,11 @@ eg. Export your credentials into your shell environment
 ```bash
 export ECS_ACCESS_KEY_ID='<Your access key ID>'
 export ECS_ACCESS_KEY_SECRET='<Your secret access key>'
-export ECS_API_ENDPOINT='<The custom API endpoint>'
-export ECS_DESCRIPTION='<The description of instance>'
-export ECS_DISK_SIZE='<The data disk size>'
-export ECS_DISK_CATEGORY='<The category of data disk>'
+export ECS_REGION='<Your region>'
 
+# Using mirrors from Aliyun
+export MACHINE_DOCKER_INSTALL_URL=http://kubernetes.oss-cn-hangzhou.aliyuncs.com/docker_install.sh
+export ENGINE_REGISTRY_MIRROR=https://registry.docker-cn.com
 
 docker-machine create -d aliyunecs <machine-name>
 ```
@@ -55,8 +55,37 @@ docker-machine create -d aliyunecs <machine-name>
 or  pass as cmdline flags
 
 ```bash
-docker-machine create -d aliyunecs --aliyunecs-tag provider=aliyuncos --aliyunecs-tag version=1.0 --aliyunecs-disk-size=20 --aliyunecs-io-optimized=optimized --aliyunecs-description=aliyunecs-machine-driver --aliyunecs-instance-type=<InstanceType> --aliyunecs-access-key-id=<Your access key ID for the Aliyun ECS API> --aliyunecs-access-key-secret=<Your secret access key for the Aliyun ECS API>  --aliyunecs-disk-category=<DiskCategory>  --aliyunecs-region=<Region>--aliyunecs-ssh-password=<SSH Password> <machine-name>
+docker-machine create -d aliyunecs --aliyunecs-access-key-id=<Your access key ID for the Aliyun ECS API> --aliyunecs-access-key-secret=<Your secret access key for the Aliyun ECS API>  --aliyunecs-region=<Region> <machine-name>
 ```
+
+## Examples
+
+#### using SSH key pair
+
+```
+docker-machine create -d aliyunecs --aliyunecs-ssh-keypair test_keypair --aliyunecs-ssh-keypath ~/.ssh/id_rsa test
+```
+
+#### custom docker engine config
+
+```
+docker-machine create -d aliyunecs --engine-storage-driver overlay2 test
+```
+
+#### custom OS config
+
+```
+docker-machine create -d aliyunecs --aliyunecs-image-id centos_7_04_64_20G_alibase_201701015.vhd test
+```
+
+
+#### attach data disk for Docker containers
+
+```
+docker-machine create -d aliyunecs --engine-storage-driver overlay2 -aliyunecs-disk-size 40 -aliyunecs-disk-fs xfs test
+```
+
+
 
 ## Options
 
@@ -69,20 +98,23 @@ docker-machine create -d aliyunecs --help
 ``--aliyunecs-access-key-secret``|Your secret access key for the Aliyun ECS API.| **yes** |
 ``--aliyunecs-api-endpoint``|The custom API endpoint.| |
 ``--aliyunecs-description`` | The description of instance.| |
- ``--aliyunecs-disk-size``| The data disk size for /var/lib/docker (in GB)||
- ``--aliyunecs-disk-category``|The category of data disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
- ``--aliyunecs-system-disk-size``| The system disk size for /var/lib/docker (in GB)||
- ``--aliyunecs-system-disk-category``|The category of system disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.|| 
+``--aliyunecs-disk-size``| The data disk size for /var/lib/docker (in GB)||
+``--aliyunecs-disk-fs``|The file system for data disk (ext4 or xfs).||
+``--aliyunecs-disk-category``|The category of data disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.||
+``--aliyunecs-system-disk-size``| The system disk size for /var/lib/docker (in GB)||
+``--aliyunecs-system-disk-category``|The category of system disk, the valid values could be `cloud` (default), `cloud_efficiency` or `cloud_ssd`.||
 ``--aliyunecs-image-id``| The image ID of the instance to use Default is the latest Ubuntu 16.04 provided by system||
 ``--aliyunecs-io-optimized``| The I/O optimized instance type, the valid values could be `none` (default) or `optimized`||
-``--aliyunecs-instance-type``| The instance type to run.  Default: `ecs.t1.small`||
-``--aliyunecs-internet-max-bandwidth``| Maxium bandwidth for Internet access (in Mbps), default 1||
+``--aliyunecs-instance-type``| The instance type to run.  Default: `ecs.n4.small`||
+``--aliyunecs-internet-max-bandwidth``| Maximum bandwidth for Internet access (in Mbps), default 1||
 ``--aliyunecs-private-address-only``| Use the private IP address only||
 ``--aliyunecs-region``| The region to use when launching the instance. Default: `cn-hangzhou`||
 ``--aliyunecs-route-cidr``| The CIDR to use configure the route entry for the instance in VPC. Sample: 192.168.200.0/24||
 ``--aliyunecs-security-group``| Aliyun security group name. Default: `docker-machine`||
 ``--aliyunecs-slb-id``|SLB id for instance association||
 ``--aliyunecs-ssh-password``| SSH password for created virtual machine. Default is random generated.||
+``--aliyunecs-ssh-keypair``| SSH key pair name ||
+``--aliyunecs-ssh-keypath``| File path of SSH private key ||
 ``--aliyunecs-system-disk-category``|System disk category for instance||
 ``--aliyunecs-tag``| Tag for the instance.||
 ``--aliyunecs-vpc-id``| Your VPC ID to launch the instance in. (required for VPC network only)||
@@ -99,8 +131,9 @@ docker-machine create -d aliyunecs --help
 | `--aliyunecs-description`           | `ECS_DESCRIPTION`           | -                |
 | `--aliyunecs-disk-size`             | `ECS_DISK_SIZE`             | -                |
 | `--aliyunecs-disk-category`         | `ECS_DISK_CATEGORY`         | -                |
-| `--aliyunecs-system-disk-size`             | `ECS_SYSTEM_DISK_SIZE`             | -                |
-| `--aliyunecs-system-disk-category`         | `ECS_SYSTEM_DISK_CATEGORY`         | -                |
+| `--aliyunecs-disk-fs`               | `ECS_DISK_FS`               | `ext4`           |
+| `--aliyunecs-system-disk-size`      | `ECS_SYSTEM_DISK_SIZE`      | -                |
+| `--aliyunecs-system-disk-category`  | `ECS_SYSTEM_DISK_CATEGORY`  | -                |
 | `--aliyunecs-image-id`              | `ECS_IMAGE_ID`              | -                |
 | `--aliyunecs-aliyunecs-io-optimized`| `ECS_IO_OPTIMIZED`          | `none`           |
 | `--aliyunecs-instance-type`         | `ECS_INSTANCE_TYPE`         | `ecs.t1.small`   |
@@ -111,6 +144,8 @@ docker-machine create -d aliyunecs --help
 | `--aliyunecs-security-group`        | `ECS_SECURITY_GROUP`        | -                |
 | `--aliyunecs-slb-id`                | `ECS_SLB_ID`                | -                |
 | `--aliyunecs-ssh-password`          | `ECS_SSH_PASSWORD`          | Random generated |
+| `--aliyunecs-ssh-keypair`           | `ECS_SSH_KEYPAIR`           | -                |
+| `--aliyunecs-ssh-keypath`           | `ECS_SSH_KEYPATH`           | -                |
 | `--aliyunecs-tag`                   | `ECS_TAGS`                  | -                |
 | `--aliyunecs-vpc-id`                | `ECS_VPC_ID`                | -                |
 | `--aliyunecs-vswitch-id`            | `ECS_VSWITCH_ID`            | -                |
@@ -118,9 +153,9 @@ docker-machine create -d aliyunecs --help
 
 Each environment variable may be overloaded by its option equivalent at runtime.
 
-## Kernels
+## OS
 
-The default ubuntu 16.04 image runs kernel 4.4
+The default OS is Ubuntu 16.04, and you can select your preferred image-id
 
 ## Hacking
 
