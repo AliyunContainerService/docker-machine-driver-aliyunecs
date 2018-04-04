@@ -13,7 +13,7 @@ RUN set -ex \
 	&& go env \
     && go get ./... \
     && go vet ./...
-RUN dmver=$(cd $GOPATH/src/github.com/docker/machine && git describe --abbrev=0 --tags) \
+RUN dmver=v0.13.0 \
     && echo "VERSION docker-machine '$dmver'"
 RUN for GOOS in $OS; do \
         arch="$GOOS-$ARCH" \
