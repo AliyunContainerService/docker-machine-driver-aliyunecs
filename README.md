@@ -82,7 +82,7 @@ docker-machine create -d aliyunecs --aliyunecs-image-id centos_7_04_64_20G_aliba
 #### attach data disk for Docker containers
 
 ```
-docker-machine create -d aliyunecs --engine-storage-driver overlay2 -aliyunecs-disk-size 40 -aliyunecs-disk-fs xfs test
+docker-machine create -d aliyunecs --engine-storage-driver overlay2 --aliyunecs-disk-size 40 --aliyunecs-disk-fs xfs test
 ```
 
 
