@@ -7,7 +7,6 @@ go:
 sudo: false
 
 script:
-  - go vet ./...
   - dmver=v0.13.0
   - echo "VERSION docker-machine '$dmver'"
   - OS="darwin linux windows"
