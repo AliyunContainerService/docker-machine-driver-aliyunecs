@@ -2,3 +2,6 @@ bin
 .DS_Store
 .idea
 docker-machine-driver-aliyunecs
+dist
+.vscode
+.dapper
