@@ -96,6 +96,7 @@ func TestSetConfigFromFlags(t *testing.T) {
 			"aliyunecs-region":        "cn-hangzhou",
 			"aliyunecs-access-key-id": "abcdefg",
 			"aliyunecs-tag":           []string{"a=tag1", "b=tag2"},
+			"aliyunecs-disk-fs":       "ext4",
 		},
 	}
 
@@ -123,7 +124,7 @@ func TestSetConfigFromFlags(t *testing.T) {
 	err = d.SetConfigFromFlags(flags)
 
 	if err != nil {
-		t.Fatalf("SetConfigFromFlags should have no error")
+		t.Fatalf("SetConfigFromFlags should have no error: %v", err)
 	}
 }
 

@@ -29,14 +29,29 @@ func validateECSRegion(region string) (common.Region, error) {
 	return "", errInvalidRegion
 }
 
-const dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+const digitals = "0123456789"
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+const specialChars = "()`~!@#$%^&*-+=|{}[]:;'<>,.?/"
+const dictionary = digitals + alphabet + specialChars
 const paswordLen = 16
 
 func randomPassword() string {
 	var bytes = make([]byte, paswordLen)
 	rand.Read(bytes)
 	for k, v := range bytes {
-		bytes[k] = dictionary[v%byte(len(dictionary))]
+		var ch byte
+
+		switch k {
+		case 0:
+			ch = alphabet[v%byte(len(alphabet))]
+		case 1:
+			ch = digitals[v%byte(len(digitals))]
+		case 2:
+			ch = specialChars[v%byte(len(specialChars))]
+		default:
+			ch = dictionary[v%byte(len(dictionary))]
+		}
+		bytes[k] = ch
 	}
 	return string(bytes)
 }
