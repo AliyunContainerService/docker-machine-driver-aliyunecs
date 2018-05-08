@@ -3,22 +3,38 @@ set -e
 
 source $(dirname $0)/version
 
-ARCH=${ARCH:-"amd64"}
-SUFFIX=""
-[ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
+cd $(dirname $0)/..
 
-cd $(dirname $0)/../package
+mkdir -p dist
+rm -rf dist/*
 
-TAG=${TAG:-${VERSION}${SUFFIX}}
-REPO=${REPO:-rancher}
+for os in $(ls bin); do
+  for arch in $(ls bin/$os); do
+    pushd bin/$os/$arch
+    tar -czf "docker-machine-driver-aliyunecs.tgz" ./docker-machine-driver-aliyunecs*
+    popd
+    mkdir -p dist/$os/$arch
+    mv bin/$os/$arch/docker-machine-driver-aliyunecs.tgz dist/$os/$arch/docker-machine-driver-aliyunecs.tgz
+  done
+done
 
-if echo $TAG | grep -q dirty; then
-    TAG=dev
-fi
 
-cp ../bin/nginx-load-balancer .
+# ARCH=${ARCH:-"amd64"}
+# SUFFIX=""
+# [ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
 
-IMAGE=${REPO}/nginx-load-balancer:${TAG}
-docker build -t ${IMAGE} .
-echo ${IMAGE} > ../dist/images
-echo Built ${IMAGE}
+# cd $(dirname $0)/../package
+
+# TAG=${TAG:-${VERSION}${SUFFIX}}
+# REPO=${REPO:-rancher}
+
+# if echo $TAG | grep -q dirty; then
+#     TAG=dev
+# fi
+
+# cp ../bin/nginx-load-balancer .
+
+# IMAGE=${REPO}/nginx-load-balancer:${TAG}
+# docker build -t ${IMAGE} .
+# echo ${IMAGE} > ../dist/images
+# echo Built ${IMAGE}
