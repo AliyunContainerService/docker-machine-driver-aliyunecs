@@ -16,4 +16,3 @@ func TestIsUbuntuImage(t *testing.T) {
 		t.Errorf("Failed to check ubuntu image - centos")
 	}
 }
-
