@@ -1247,6 +1247,36 @@ func (d *Driver) configureSecurityGroupPermissions(group *ecs.DescribeSecurityGr
 		IpRange:    ipRange,
 	})
 
+	//kubelet ScedulerPort ControllerPort
+	perms = append(perms, IpPermission{
+		IpProtocol: ecs.IpProtocolTCP,
+		FromPort:   10250,
+		ToPort:     10252,
+		IpRange:    ipRange,
+	})
+
+	//KubeProxyPort
+	perms = append(perms, IpPermission{
+		IpProtocol: ecs.IpProtocolTCP,
+		FromPort:   10256,
+		ToPort:     10256,
+		IpRange:    ipRange,
+	})
+
+	perms = append(perms, IpPermission{
+		IpProtocol: ecs.IpProtocolUDP,
+		FromPort:   4789,
+		ToPort:     4789,
+		IpRange:    ipRange,
+	})
+
+	perms = append(perms, IpPermission{
+		IpProtocol: ecs.IpProtocolUDP,
+		FromPort:   8472,
+		ToPort:     8472,
+		IpRange:    ipRange,
+	})
+
 	//rke end
 	//如果是容器网段的话，需要设置容器网段开放安全组
 	if d.VpcId != "" || d.VSwitchId != "" {
