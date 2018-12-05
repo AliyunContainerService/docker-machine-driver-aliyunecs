@@ -32,7 +32,7 @@ const (
 	defaultRegion            = "cn-hangzhou"
 	defaultInstanceType      = "ecs.n4.small"
 	defaultRootSize          = 20
-	internetChargeType       = "PayByTraffic"
+	internetChargeType       = string(common.PayByTraffic)
 	ipRange                  = "0.0.0.0/0"
 	machineSecurityGroupName = "docker-machine"
 	vpcCidrBlock             = "10.0.0.0/8"
@@ -69,6 +69,7 @@ type Driver struct {
 	Zone                    string
 	PrivateIPOnly           bool
 	InternetMaxBandwidthOut int
+	InternetChargeType      common.InternetChargeType
 	RouteCIDR               string
 	SLBID                   string
 	SLBIPAddress            string
@@ -175,9 +176,15 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		},
 		mcnflag.IntFlag{
 			Name:   "aliyunecs-internet-max-bandwidth",
-			Usage:  "Maxium bandwidth for Internet access (in Mbps), default 1",
+			Usage:  "Maximum bandwidth for Internet access (in Mbps), default 1",
 			Value:  1,
 			EnvVar: "ECS_INTERNET_MAX_BANDWIDTH",
+		},
+		mcnflag.StringFlag{
+			Name:   "aliyunecs-internet-charge-type",
+			Usage:  "Internet charge type, the valid values are PayByTraffic (default) or PayByBandwidth",
+			Value:  internetChargeType,
+			EnvVar: "ECS_INTERNET_CHARGE_TYPE",
 		},
 		mcnflag.StringFlag{
 			Name:   "aliyunecs-route-cidr",
@@ -324,6 +331,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.SSHPort = 22
 	d.PrivateIPOnly = flags.Bool("aliyunecs-private-address-only")
 	d.InternetMaxBandwidthOut = flags.Int("aliyunecs-internet-max-bandwidth")
+	d.InternetChargeType = common.InternetChargeType(flags.String("aliyunecs-internet-charge-type"))
 	d.RouteCIDR = flags.String("aliyunecs-route-cidr")
 	d.SLBID = flags.String("aliyunecs-slb-id")
 	d.DiskSize = flags.Int("aliyunecs-disk-size")
@@ -375,13 +383,16 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 		}
 	}
 
-	//TODO support PayByTraffic
 	if d.InternetMaxBandwidthOut < 0 || d.InternetMaxBandwidthOut > 100 {
 		return fmt.Errorf("%s | aliyunecs driver --aliyunecs-internet-max-bandwidth: The value should be in 1 ~ 100", d.MachineName)
 	}
 
 	if d.InternetMaxBandwidthOut == 0 {
 		d.InternetMaxBandwidthOut = 1
+	}
+
+	if d.InternetChargeType != common.PayByTraffic && d.InternetChargeType != common.PayByBandwidth {
+		return fmt.Errorf("Unsupported internet charge type: %s", d.InternetChargeType)
 	}
 
 	if d.AccessKey == "" {
@@ -421,7 +432,6 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	if d.DiskFS != "xfs" && d.DiskFS != "ext4" {
 		return fmt.Errorf("Unsupport file system for data disk: %s", d.DiskFS)
 	}
-
 
 	if d.SSHPrivateKeyPath == "" && d.SSHKeyPairName != "" {
 		return fmt.Errorf("using --aliyunecs-keypair-name also requires --aliyunecs-ssh-keypath")
@@ -468,7 +478,6 @@ func (d *Driver) Create() error {
 		return fmt.Errorf("%s | Failed to create key pair: %v", d.MachineName, err)
 	}
 
-
 	log.Infof("%s | Configuring security groups instance ...", d.MachineName)
 	if err := d.configureSecurityGroup(VpcId, d.SecurityGroupName); err != nil {
 		return err
@@ -495,7 +504,7 @@ func (d *Driver) Create() error {
 		ImageId:                 imageID,
 		InstanceType:            d.InstanceType,
 		SecurityGroupId:         d.SecurityGroupId,
-		InternetChargeType:      internetChargeType,
+		InternetChargeType:      d.InternetChargeType,
 		Password:                d.SSHPassword,
 		KeyPairName:             d.SSHKeyPairName,
 		VSwitchId:               VSwitchId,
@@ -630,9 +639,10 @@ func (d *Driver) configNetwork(vpcId string, instanceId string) error {
 		if !d.PrivateIPOnly {
 			// Create EIP for virtual private cloud
 			eipArgs := ecs.AllocateEipAddressArgs{
-				RegionId:    d.Region,
-				Bandwidth:   d.InternetMaxBandwidthOut,
-				ClientToken: d.getClient().GenerateClientToken(),
+				RegionId:           d.Region,
+				Bandwidth:          d.InternetMaxBandwidthOut,
+				InternetChargeType: d.InternetChargeType,
+				ClientToken:        d.getClient().GenerateClientToken(),
 			}
 			log.Infof("%s | Allocating Eip address for instance %s ...", d.MachineName, instanceId)
 
