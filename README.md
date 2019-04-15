@@ -35,7 +35,36 @@ binaries also available,you can download from below links:
 
 * Windows 64 bit: [docker-machine-driver-aliyunecs_windows-amd64](https://docker-machine-aliyunecs-drivers.oss-cn-beijing.aliyuncs.com/docker-machine-driver-aliyunecs_windows-amd64.tgz)
 
+How to install docker-machine-driver-aliyunecs binary packages on different platforms.
 
+* Download the binary package for the corresponding platform. We currently support Windows, Linux, and MAC platforms
+* Extract the donload package
+
+  eg. Take the Mac platform for example
+  
+	```
+		tar zxvf docker-machine-driver-aliyunecs_darwin-amd64.tgz
+	```
+	
+* Rename the executable
+
+	```
+	#Windows
+	docker-machine-driver-aliyunecs.windows-amd64 => docker-machine-driver-aliyunecs.exe
+	
+	#Linux
+	docker-machine-driver-aliyunecs.linux-amd64 => docker-machine-driver-aliyunecs
+	
+	#Mac
+	docker-machine-driver-aliyunecs.darwin-amd64 => docker-machine-driver-aliyunecs
+	```
+
+* Add docker-machine driver to the environment variables.
+	
+	```
+	export PATH=<Your Local Path>/docker-machine-driver-aliyunecs[.exe]:$PATH
+
+	```
 
 ## Example Usage 
 eg. Export your credentials into your shell environment 
