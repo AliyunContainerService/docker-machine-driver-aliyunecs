@@ -785,7 +785,7 @@ func (d *Driver) addRouteEntry(vpcId string) error {
 			createArgs := ecs.CreateRouteEntryArgs{
 				RouteTableId:         routeTableId,
 				DestinationCidrBlock: d.RouteCIDR,
-				NextHopType:          ecs.NextHopIntance,
+				NextHopType:          ecs.NextHopInstance,
 				NextHopId:            d.InstanceId,
 				ClientToken:          client.GenerateClientToken(),
 			}
