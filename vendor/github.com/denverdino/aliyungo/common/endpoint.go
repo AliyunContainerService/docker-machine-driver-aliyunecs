@@ -4,8 +4,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -17,7 +20,9 @@ const (
 )
 
 var (
-	endpoints = make(map[Region]map[string]string)
+	//endpoints = make(map[Region]map[string]string)
+
+	endpoints = sync.Map{}
 
 	SpecailEnpoints = map[Region]map[string]string{
 		APNorthEast1: {
@@ -49,6 +54,12 @@ var (
 			"slb": "https://slb.eu-central-1.aliyuncs.com",
 			"rds": "https://rds.eu-central-1.aliyuncs.com",
 			"vpc": "https://vpc.eu-central-1.aliyuncs.com",
+		},
+		EUWest1: {
+			"ecs": "https://ecs.eu-west-1.aliyuncs.com",
+			"slb": "https://slb.eu-west-1.aliyuncs.com",
+			"rds": "https://rds.eu-west-1.aliyuncs.com",
+			"vpc": "https://vpc.eu-west-1.aliyuncs.com",
 		},
 		Zhangjiakou: {
 			"ecs": "https://ecs.cn-zhangjiakou.aliyuncs.com",
@@ -121,26 +132,28 @@ func (client *LocationClient) DescribeEndpoints(args *DescribeEndpointsArgs) (*D
 }
 
 func getProductRegionEndpoint(region Region, serviceCode string) string {
-	if sp, ok := endpoints[region]; ok {
-		if endpoint, ok := sp[serviceCode]; ok {
-			return endpoint
+
+	if sp, ok := endpoints.Load(region); ok {
+		spt, ok := sp.(*sync.Map)
+		if ok {
+			if endp, ok := spt.Load(serviceCode); ok {
+				return endp.(string)
+			}
 		}
 	}
-
 	return ""
 }
 
 func setProductRegionEndpoint(region Region, serviceCode string, endpoint string) {
-	endpoints[region] = map[string]string{
-		serviceCode: endpoint,
-	}
+	m := sync.Map{}
+	m.Store(serviceCode, endpoint)
+	endpoints.Store(region, &m)
 }
 
 func (client *LocationClient) DescribeOpenAPIEndpoint(region Region, serviceCode string) string {
 	if endpoint := getProductRegionEndpoint(region, serviceCode); endpoint != "" {
 		return endpoint
 	}
-
 	defaultProtocols := HTTP_PROTOCOL
 
 	args := &DescribeEndpointsArgs{
@@ -149,8 +162,18 @@ func (client *LocationClient) DescribeOpenAPIEndpoint(region Region, serviceCode
 		Type:        "openAPI",
 	}
 
-	endpoint, err := client.DescribeEndpoints(args)
-	if err != nil || len(endpoint.Endpoints.Endpoint) <= 0 {
+	var endpoint *DescribeEndpointsResponse
+	var err error
+	for index := 0; index < 5; index++ {
+		endpoint, err = client.DescribeEndpoints(args)
+		if err == nil && endpoint != nil && len(endpoint.Endpoints.Endpoint) > 0 {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	if err != nil || endpoint == nil || len(endpoint.Endpoints.Endpoint) <= 0 {
+		log.Printf("aliyungo: can not get endpoint from service, use default. endpoint=[%v], error=[%v]\n", endpoint, err)
 		return ""
 	}
 
@@ -163,7 +186,7 @@ func (client *LocationClient) DescribeOpenAPIEndpoint(region Region, serviceCode
 
 	ep := fmt.Sprintf("%s://%s", defaultProtocols, endpoint.Endpoints.Endpoint[0].Endpoint)
 
-	//setProductRegionEndpoint(region, serviceCode, ep)
+	setProductRegionEndpoint(region, serviceCode, ep)
 	return ep
 }
 

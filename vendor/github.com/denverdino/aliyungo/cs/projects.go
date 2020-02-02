@@ -57,12 +57,13 @@ type ProjectCreationArgs struct {
 }
 
 type ProjectUpdationArgs struct {
-	Name        string            `json:"-"`
-	Description string            `json:"description"`
-	Template    string            `json:"template"`
-	Version     string            `json:"version"`
-	Environment map[string]string `json:"environment"`
-	LatestImage bool              `json:"latest_image"`
+	Name         string            `json:"-"`
+	Description  string            `json:"description"`
+	Template     string            `json:"template"`
+	Version      string            `json:"version"`
+	Environment  map[string]string `json:"environment"`
+	LatestImage  bool              `json:"latest_image"`
+	UpdateMethod string            `json:"update_method"`
 }
 
 func (client *ProjectClient) GetProjects(q string, services, containers bool) (projects GetProjectsResponse, err error) {
@@ -182,5 +183,52 @@ func (client *ProjectClient) DeleteProject(name string, forceDelete, deleteVolum
 
 	err = client.Invoke(http.MethodDelete, "/projects/"+name, query, nil, nil)
 
+	return
+}
+
+func (client *ProjectClient) ConfirmBlueGreenProject(name string, force bool) (err error) {
+
+	if len(name) == 0 {
+		err = errors.New("project name is empty")
+		return
+	}
+
+	err = client.Invoke(http.MethodPost, "/projects/"+name+"/confirm-update?force="+strconv.FormatBool(force), nil, nil, nil)
+
+	return
+}
+
+func (client *ProjectClient) RollBackBlueGreenProject(name string, force bool) (err error) {
+
+	if len(name) == 0 {
+		err = errors.New("project name is empty")
+		return
+	}
+
+	err = client.Invoke(http.MethodPost, "/projects/"+name+"/rollback-update?force="+strconv.FormatBool(force), nil, nil, nil)
+
+	return
+}
+
+type SwarmNodeType struct {
+	IP                string
+	Healthy           bool
+	InstanceId        string
+	ZoneId            string
+	RegionId          string
+	Status            string
+	CreationTime      string `json:"created"`
+	UpdatedTime       string `json:"updated"`
+	Containers        int
+	ContainersRunning int
+	ContainersPaused  int
+	ContainersStopped int
+	AgentVersion      string
+	Name              string
+}
+type GetSwarmClusterNodesResponse []SwarmNodeType
+
+func (client *ProjectClient) GetSwarmClusterNodes() (project GetSwarmClusterNodesResponse, err error) {
+	err = client.Invoke(http.MethodGet, "/hosts/", nil, nil, &project)
 	return
 }

@@ -1,15 +1,22 @@
 package ecs
 
-import "github.com/denverdino/aliyungo/common"
+import (
+	"fmt"
+	"time"
+
+	"github.com/denverdino/aliyungo/common"
+	"github.com/denverdino/aliyungo/util"
+)
 
 type CreateNetworkInterfaceArgs struct {
 	RegionId             common.Region
 	VSwitchId            string
 	PrimaryIpAddress     string // optional
 	SecurityGroupId      string
-	NetworkInterfaceName string // optional
-	Description          string // optional
-	ClientToken          string // optional
+	NetworkInterfaceName string            // optional
+	Description          string            // optional
+	ClientToken          string            // optional
+	Tag                  map[string]string // optional
 }
 
 type CreateNetworkInterfaceResponse struct {
@@ -28,27 +35,59 @@ type DeleteNetworkInterfaceResponse struct {
 type DescribeNetworkInterfacesArgs struct {
 	RegionId             common.Region
 	VSwitchId            string
+	VpcID                string
 	PrimaryIpAddress     string
+	PrivateIpAddress     []string `query:"list"`
 	SecurityGroupId      string
 	NetworkInterfaceName string
 	Type                 string
 	InstanceId           string
-	NetworkInterfaceId   []string
+	NetworkInterfaceId   []string `query:"list"`
 	PageNumber           int
 	PageSize             int
 }
 type NetworkInterfaceType struct {
-	NetworkInterfaceId string
-	PrimaryIpAddress   string
+	NetworkInterfaceId   string
+	NetworkInterfaceName string
+	PrimaryIpAddress     string
+	PrivateIpSets        struct {
+		PrivateIpSet []PrivateIpType
+	}
 	MacAddress         string
+	Status             string
+	Type               string
+	VpcId              string
+	VSwitchId          string
+	ZoneId             string
+	AssociatedPublicIp AssociatedPublicIp
+	SecurityGroupIds   struct {
+		SecurityGroupId []string
+	}
+	Description      string
+	InstanceId       string
+	CreationTime     util.ISO6801Time
+	PrivateIpAddress string
+}
+
+type PrivateIpType struct {
+	PrivateIpAddress   string
+	Primary            bool
+	AssociatedPublicIp AssociatedPublicIp
+}
+
+type AssociatedPublicIp struct {
+	PublicIpAddress string
+	AllocationId    string
 }
 
 type DescribeNetworkInterfacesResponse struct {
 	common.Response
-	NetworkInterfaceSet []NetworkInterfaceType
-	TotalCount          int
-	PageNumber          int
-	PageSize            int
+	NetworkInterfaceSets struct {
+		NetworkInterfaceSet []NetworkInterfaceType
+	}
+	TotalCount int
+	PageNumber int
+	PageSize   int
 }
 type AttachNetworkInterfaceArgs struct {
 	RegionId           common.Region
@@ -71,6 +110,23 @@ type ModifyNetworkInterfaceAttributeArgs struct {
 }
 type ModifyNetworkInterfaceAttributeResponse common.Response
 
+type UnassignPrivateIpAddressesArgs struct {
+	RegionId           common.Region
+	NetworkInterfaceId string
+	PrivateIpAddress   []string `query:"list"`
+}
+
+type UnassignPrivateIpAddressesResponse common.Response
+
+type AssignPrivateIpAddressesArgs struct {
+	RegionId                       common.Region
+	NetworkInterfaceId             string
+	PrivateIpAddress               []string `query:"list"` // optional
+	SecondaryPrivateIpAddressCount int      // optional
+}
+
+type AssignPrivateIpAddressesResponse common.Response
+
 func (client *Client) CreateNetworkInterface(args *CreateNetworkInterfaceArgs) (resp *CreateNetworkInterfaceResponse, err error) {
 	resp = &CreateNetworkInterfaceResponse{}
 	err = client.Invoke("CreateNetworkInterface", args, resp)
@@ -89,10 +145,10 @@ func (client *Client) DescribeNetworkInterfaces(args *DescribeNetworkInterfacesA
 	return resp, err
 }
 
-func (client *Client) AttachNetworkInterface(args *AttachNetworkInterfaceArgs) (resp *AttachNetworkInterfaceResponse, err error) {
-	resp = &AttachNetworkInterfaceResponse{}
-	err = client.Invoke("AttachNetworkInterface", args, resp)
-	return resp, err
+func (client *Client) AttachNetworkInterface(args *AttachNetworkInterfaceArgs) error {
+	resp := &AttachNetworkInterfaceResponse{}
+	err := client.Invoke("AttachNetworkInterface", args, resp)
+	return err
 }
 
 func (client *Client) DetachNetworkInterface(args *DetachNetworkInterfaceArgs) (resp *DetachNetworkInterfaceResponse, err error) {
@@ -105,4 +161,52 @@ func (client *Client) ModifyNetworkInterfaceAttribute(args *ModifyNetworkInterfa
 	resp = &ModifyNetworkInterfaceAttributeResponse{}
 	err = client.Invoke("ModifyNetworkInterfaceAttribute", args, resp)
 	return resp, err
+}
+
+func (client *Client) UnassignPrivateIpAddresses(args *UnassignPrivateIpAddressesArgs) (resp *UnassignPrivateIpAddressesResponse, err error) {
+	resp = &UnassignPrivateIpAddressesResponse{}
+	err = client.Invoke("UnassignPrivateIpAddresses", args, resp)
+	return resp, err
+}
+
+func (client *Client) AssignPrivateIpAddresses(args *AssignPrivateIpAddressesArgs) (resp *AssignPrivateIpAddressesResponse, err error) {
+	resp = &AssignPrivateIpAddressesResponse{}
+	err = client.Invoke("AssignPrivateIpAddresses", args, resp)
+	return resp, err
+}
+
+// Default timeout value for WaitForInstance method
+const NetworkInterfacesDefaultTimeout = 120
+
+// WaitForInstance waits for instance to given status
+func (client *Client) WaitForNetworkInterface(regionId common.Region, eniID string, status string, timeout int) error {
+	if timeout <= 0 {
+		timeout = NetworkInterfacesDefaultTimeout
+	}
+	for {
+
+		eniIds := []string{eniID}
+
+		describeNetworkInterfacesArgs := DescribeNetworkInterfacesArgs{
+			RegionId:           regionId,
+			NetworkInterfaceId: eniIds,
+		}
+
+		nisResponse, err := client.DescribeNetworkInterfaces(&describeNetworkInterfacesArgs)
+		if err != nil {
+			return fmt.Errorf("Failed to describe network interface %v: %v", eniID, err)
+		}
+
+		if len(nisResponse.NetworkInterfaceSets.NetworkInterfaceSet) > 0 && nisResponse.NetworkInterfaceSets.NetworkInterfaceSet[0].Status == status {
+			break
+		}
+
+		timeout = timeout - DefaultWaitForInterval
+		if timeout <= 0 {
+			return fmt.Errorf("Timeout for waiting available status for network interfaces")
+		}
+		time.Sleep(DefaultWaitForInterval * time.Second)
+
+	}
+	return nil
 }

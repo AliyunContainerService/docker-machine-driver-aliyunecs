@@ -160,6 +160,7 @@ func (client *Client) CreateImage(args *CreateImageArgs) (imageId string, err er
 type DeleteImageArgs struct {
 	RegionId common.Region
 	ImageId  string
+	Force    bool
 }
 
 type DeleteImageResponse struct {
@@ -173,6 +174,20 @@ func (client *Client) DeleteImage(regionId common.Region, imageId string) error 
 	args := DeleteImageArgs{
 		RegionId: regionId,
 		ImageId:  imageId,
+	}
+
+	response := &DeleteImageResponse{}
+	return client.Invoke("DeleteImage", &args, &response)
+}
+
+// DeleteImage deletes Image
+//
+// You can read doc at http://docs.aliyun.com/#/pub/ecs/open-api/image&deleteimage
+func (client *Client) DeleteImageWithForce(regionId common.Region, imageId string, force bool) error {
+	args := DeleteImageArgs{
+		RegionId: regionId,
+		ImageId:  imageId,
+		Force:    force,
 	}
 
 	response := &DeleteImageResponse{}
@@ -298,7 +313,7 @@ func (client *Client) WaitForImageReady(regionId common.Region, imageId string, 
 		if err != nil {
 			return err
 		}
-		if images == nil || len(images) == 0 {
+		if len(images) == 0 {
 			args.Status = ImageStatusAvailable
 			images, _, er := client.DescribeImages(&args)
 			if er == nil && len(images) == 1 {

@@ -1,8 +1,8 @@
 hash: eb661c75ac53c69831c29c5419a4983c70e3f2aefd6774455679a04925f8ff2c
-updated: 2018-01-14T18:43:03.511864+08:00
+updated: 2020-02-02T07:55:55.142041+08:00
 imports:
 - name: github.com/denverdino/aliyungo
-  version: 4321f40169319af5be81746c2d22535b4ba30f57
+  version: 1d76819bf72ef67f307d10b36b810cca46763a94
   subpackages:
   - common
   - ecs

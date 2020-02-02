@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"time"
 
+	"strings"
+
 	"github.com/denverdino/aliyungo/common"
 	"github.com/denverdino/aliyungo/util"
 )
@@ -47,6 +49,7 @@ func NewProjectClient(clusterId, endpoint string, clusterCerts ClusterCerts) (cl
 	}
 
 	client = &ProjectClient{
+		clusterId:  clusterId,
 		endpoint:   endpoint,
 		httpClient: httpClient,
 	}
@@ -132,7 +135,7 @@ func (client *ProjectClient) Invoke(method string, path string, query url.Values
 	if client.debug {
 		var prettyJSON bytes.Buffer
 		err = json.Indent(&prettyJSON, body, "", "    ")
-		log.Println(string(prettyJSON.Bytes()))
+		log.Println(prettyJSON.String())
 	}
 
 	if statusCode >= 400 && statusCode <= 599 {
@@ -141,6 +144,11 @@ func (client *ProjectClient) Invoke(method string, path string, query url.Values
 		ecsError := &common.Error{
 			ErrorResponse: errorResponse,
 			StatusCode:    statusCode,
+		}
+
+		// Project error is not standard ErrorResponse and its body only contains error message
+		if len(strings.TrimSpace(ecsError.Message)) <= 0 {
+			ecsError.Message = strings.Trim(string(body[:]), "\n")
 		}
 		return ecsError
 	}

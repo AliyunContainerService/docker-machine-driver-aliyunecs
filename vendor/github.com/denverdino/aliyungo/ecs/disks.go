@@ -59,7 +59,7 @@ type DescribeDisksArgs struct {
 	Category           DiskCategory //enum for all(default) | cloud | ephemeral
 	Status             DiskStatus   //enum for In_use | Available | Attaching | Detaching | Creating | ReIniting | All(default)
 	SnapshotId         string
-	Name               string
+	DiskName           string
 	Portable           *bool //optional
 	DeleteWithInstance *bool //optional
 	DeleteAutoSnapshot *bool //optional
@@ -78,6 +78,7 @@ type DiskItemType struct {
 	DiskName           string
 	Description        string
 	Type               DiskType
+	Encrypted          bool
 	Category           DiskCategory
 	Size               int
 	ImageId            string
@@ -140,6 +141,7 @@ type CreateDiskArgs struct {
 	Size         int
 	SnapshotId   string
 	ClientToken  string
+	KMSKeyID     string
 }
 
 type CreateDisksResponse struct {
@@ -346,7 +348,7 @@ func (client *Client) WaitForDisk(regionId common.Region, diskId string, status 
 		if err != nil {
 			return err
 		}
-		if disks == nil || len(disks) == 0 {
+		if len(disks) == 0 {
 			return common.GetClientErrorFromString("Not found")
 		}
 		if disks[0].Status == status {
