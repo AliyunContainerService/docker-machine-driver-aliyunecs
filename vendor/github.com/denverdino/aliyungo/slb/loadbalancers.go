@@ -2,9 +2,10 @@ package slb
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/denverdino/aliyungo/common"
 	"github.com/denverdino/aliyungo/util"
-	"time"
 )
 
 type AddressType string
@@ -21,6 +22,24 @@ const (
 	PayByTraffic   = InternetChargeType("paybytraffic")
 )
 
+type AddressIPVersionType string
+
+const (
+	IPv4 = AddressIPVersionType("ipv4")
+	IPv6 = AddressIPVersionType("ipv6")
+)
+
+type LoadBalancerSpecType string
+
+const (
+	S1Small  = "slb.s1.small"
+	S2Small  = "slb.s2.small"
+	S2Medium = "slb.s2.medium"
+	S3Small  = "slb.s3.small"
+	S3Medium = "slb.s3.medium"
+	S3Large  = "slb.s3.large"
+)
+
 type CreateLoadBalancerArgs struct {
 	RegionId           common.Region
 	LoadBalancerName   string
@@ -31,6 +50,9 @@ type CreateLoadBalancerArgs struct {
 	ClientToken        string
 	MasterZoneId       string
 	SlaveZoneId        string
+	LoadBalancerSpec   LoadBalancerSpecType
+	AddressIPVersion   AddressIPVersionType
+	DeleteProtection   FlagType
 }
 
 type CreateLoadBalancerResponse struct {
@@ -41,6 +63,9 @@ type CreateLoadBalancerResponse struct {
 	VpcId            string
 	VSwitchId        string
 	LoadBalancerName string
+	MasterZoneId     string
+	SlaveZoneId      string
+	AddressIPVersion AddressIPVersionType
 }
 
 // CreateLoadBalancer create loadbalancer
@@ -92,6 +117,22 @@ type ModifyLoadBalancerInternetSpecResponse struct {
 func (client *Client) ModifyLoadBalancerInternetSpec(args *ModifyLoadBalancerInternetSpecArgs) (err error) {
 	response := &ModifyLoadBalancerInternetSpecResponse{}
 	err = client.Invoke("ModifyLoadBalancerInternetSpec", args, response)
+	return err
+}
+
+type ModifyLoadBalancerInstanceSpecArgs struct {
+	RegionId         common.Region
+	LoadBalancerId   string
+	LoadBalancerSpec LoadBalancerSpecType
+}
+
+// ModifyLoadBalancerInstanceSpec Modify loadbalancer instance spec
+//
+// You can read doc at https://help.aliyun.com/document_detail/53360.html
+
+func (client *Client) ModifyLoadBalancerInstanceSpec(args *ModifyLoadBalancerInstanceSpecArgs) (err error) {
+	response := &common.Response{}
+	err = client.Invoke("ModifyLoadBalancerInstanceSpec", args, response)
 	return err
 }
 
@@ -158,16 +199,19 @@ type DescribeLoadBalancersArgs struct {
 	Address            string
 	InternetChargeType InternetChargeType
 	ServerId           string
+	Tags               string
 }
 
 type ListenerPortAndProtocolType struct {
 	ListenerPort     int
 	ListenerProtocol string
+	Description      string
 }
 
 type BackendServerType struct {
 	ServerId string
 	Weight   int
+	Type     string
 }
 
 type LoadBalancerType struct {
@@ -185,6 +229,7 @@ type LoadBalancerType struct {
 	InternetChargeType InternetChargeType
 	CreateTime         string //Why not ISO 6801
 	CreateTimeStamp    util.ISO6801Time
+	DeleteProtection   FlagType
 	ListenerPorts      struct {
 		ListenerPort []int
 	}
@@ -194,6 +239,10 @@ type LoadBalancerType struct {
 	BackendServers struct {
 		BackendServer []BackendServerType
 	}
+	LoadBalancerSpec LoadBalancerSpecType
+	MasterZoneId     string
+	SlaveZoneId      string
+	AddressIPVersion AddressIPVersionType
 }
 
 type DescribeLoadBalancersResponse struct {
@@ -288,4 +337,23 @@ func (client *Client) WaitForLoadBalancerAsyn(loadBalancerId string, status Stat
 		time.Sleep(DefaultWaitForInterval * time.Second)
 	}
 	return nil
+}
+
+type SetLoadBalancerDeleteProtectionArgs struct {
+	LoadBalancerId   string
+	DeleteProtection FlagType
+	RegionId         common.Region
+}
+
+type SetLoadBalancerDeleteProtectionResponse struct {
+	common.Response
+}
+
+// SetLoadBalancerDeleteProtection loadbalancer delete protection
+//
+// You can read doc at https://help.aliyun.com/document_detail/122674.html?spm=a2c4g.11186623.6.720.694f4265hwOdXQ
+func (client *Client) SetLoadBalancerDeleteProtection(args *SetLoadBalancerDeleteProtectionArgs) (err error) {
+	response := &SetLoadBalancerDeleteProtectionResponse{}
+	err = client.Invoke("SetLoadBalancerDeleteProtection", args, response)
+	return err
 }

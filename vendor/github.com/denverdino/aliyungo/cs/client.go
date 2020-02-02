@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -33,6 +32,12 @@ type Client struct {
 	debug           bool
 	userAgent       string
 	httpClient      *http.Client
+}
+
+type PaginationResult struct {
+	TotalCount int `json:"total_count"`
+	PageNumber int `json:"page_number"`
+	PageSize   int `json:"page_size"`
 }
 
 type Response struct {
@@ -69,6 +74,11 @@ func (client *Client) SetDebug(debug bool) {
 // SetUserAgent sets user agent to log the request/response message
 func (client *Client) SetUserAgent(userAgent string) {
 	client.userAgent = userAgent
+}
+
+// SetEndpoint sets customer endpoint
+func (client *Client) SetEndpoint(endpoint string) {
+	client.endpoint = endpoint
 }
 
 type Request struct {
@@ -116,7 +126,7 @@ func (client *Client) Invoke(region common.Region, method string, path string, q
 	}
 
 	if region != "" {
-		httpReq.Header.Set("x-acs-region-id", string(region))
+		httpReq.Header["x-acs-region-id"] = []string{string(region)}
 	}
 
 	if contentType != "" {
@@ -128,12 +138,14 @@ func (client *Client) Invoke(region common.Region, method string, path string, q
 	// TODO move to util and add build val flag
 	httpReq.Header.Set("Date", util.GetGMTime())
 	httpReq.Header.Set("Accept", "application/json")
-	//httpReq.Header.Set("x-acs-version", client.Version)
+	httpReq.Header["x-acs-version"] = []string{client.Version}
 	httpReq.Header["x-acs-signature-version"] = []string{"1.0"}
 	httpReq.Header["x-acs-signature-nonce"] = []string{util.CreateRandomString()}
 	httpReq.Header["x-acs-signature-method"] = []string{"HMAC-SHA1"}
 
-	fmt.Printf("Header = %++v", httpReq.Header)
+	if client.debug {
+		log.Printf("Header = %++v", httpReq.Header)
+	}
 
 	if client.userAgent != "" {
 		httpReq.Header.Set("User-Agent", client.userAgent)
@@ -167,7 +179,7 @@ func (client *Client) Invoke(region common.Region, method string, path string, q
 	if client.debug {
 		var prettyJSON bytes.Buffer
 		err = json.Indent(&prettyJSON, body, "", "    ")
-		log.Println(string(prettyJSON.Bytes()))
+		log.Println(prettyJSON.String())
 	}
 
 	if statusCode >= 400 && statusCode <= 599 {
@@ -180,7 +192,7 @@ func (client *Client) Invoke(region common.Region, method string, path string, q
 		return ecsError
 	}
 
-	if response != nil {
+	if response != nil && len(body) > 0 {
 		err = json.Unmarshal(body, response)
 		//log.Printf("%++v", response)
 		if err != nil {

@@ -1,6 +1,11 @@
 package slb
 
-import "testing"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"testing"
+)
 
 func testListeners(t *testing.T, client *Client, loadBalancerId string) {
 
@@ -40,4 +45,39 @@ func testListeners(t *testing.T, client *Client, loadBalancerId string) {
 		t.Errorf("Failed to DescribeLoadBalancerTCPListenerAttribute: %v", err)
 	}
 	t.Logf("Listener: %++v", *response)
+}
+
+func TestDescribeListener(t *testing.T) {
+
+	response, err := client.DescribeLoadBalancerTCPListenerAttribute(loadBalancerId, 22)
+	if err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println(PrettyJson(response))
+	}
+}
+
+func TestDescribeSLB(t *testing.T) {
+
+	response, err := client.DescribeLoadBalancerAttribute(loadBalancerId)
+	if err != nil {
+		t.Error(err)
+	} else {
+		fmt.Println(PrettyJson(response))
+	}
+}
+
+func PrettyJson(obj interface{}) string {
+	pretty := bytes.Buffer{}
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return err.Error()
+	}
+	err = json.Indent(&pretty, data, "", "    ")
+
+	if err != nil {
+		return err.Error()
+	}
+
+	return pretty.String()
 }

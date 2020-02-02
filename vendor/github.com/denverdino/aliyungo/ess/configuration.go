@@ -2,6 +2,7 @@ package ess
 
 import (
 	"encoding/base64"
+
 	"github.com/denverdino/aliyungo/common"
 	"github.com/denverdino/aliyungo/ecs"
 )
@@ -15,7 +16,7 @@ type CreateScalingConfigurationArgs struct {
 	ScalingConfigurationName string
 	InternetChargeType       common.InternetChargeType
 	InternetMaxBandwidthIn   int
-	InternetMaxBandwidthOut  int
+	InternetMaxBandwidthOut  *int
 	SystemDisk_Category      common.UnderlineString
 	SystemDisk_Size          common.UnderlineString
 	DataDisk                 []DataDiskType
@@ -23,6 +24,7 @@ type CreateScalingConfigurationArgs struct {
 	KeyPairName              string
 	RamRoleName              string
 	Tags                     string
+	InstanceName             string
 }
 
 type DataDiskType struct {
@@ -80,6 +82,7 @@ type ScalingConfigurationItemType struct {
 	ScalingGroupId           string
 	ImageId                  string
 	InstanceType             string
+	InstanceName             string
 	IoOptimized              string
 	SecurityGroupId          string
 	InternetChargeType       string
@@ -87,6 +90,7 @@ type ScalingConfigurationItemType struct {
 	CreationTime             string
 	InternetMaxBandwidthIn   int
 	InternetMaxBandwidthOut  int
+	SystemDiskSize           int
 	SystemDiskCategory       string
 	DataDisks                struct {
 		DataDisk []DataDiskItemType
