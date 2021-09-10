@@ -13,9 +13,13 @@ func TestAssignPrivateIPAddresses(t *testing.T) {
 		PrivateIpAddress:   []string{"192.168.1.200", "192.168.1.201"},
 	}
 	client := NewTestClient()
-	_, err := client.AssignPrivateIpAddresses(&req)
+	assignPrivateIpAddressesResponse, err := client.AssignPrivateIpAddresses(&req)
 	if err != nil {
 		t.Errorf("Failed to AssignPrivateIpAddresses: %v", err)
+	}
+
+	if assignPrivateIpAddressesResponse.AssignedPrivateIpAddressesSet.NetworkInterfaceId != "eni-testeni" {
+		t.Errorf("assert network id mismatch.%s\n", assignPrivateIpAddressesResponse.AssignedPrivateIpAddressesSet.NetworkInterfaceId)
 	}
 
 	time.Sleep(5 * time.Second)
@@ -73,4 +77,33 @@ func TestUnAssignPrivateIPAddresses(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to UnAssignPrivateIpAddresses: %v", err)
 	}
+}
+
+func TestModifyNetworkInterfaceAttribute(t *testing.T) {
+	args := &ModifyNetworkInterfaceAttributeArgs{
+		RegionId:           common.Shanghai,
+		NetworkInterfaceId: "eni-testeni",
+		SecurityGroupId:    []string{"sg-xxx", "sg-yyy"},
+	}
+
+	client := NewTestClient()
+	_, err := client.ModifyNetworkInterfaceAttribute(args)
+	if err != nil {
+		t.Errorf("failed to ModifyNetworkInterfaceAttribute: %v", err)
+	}
+}
+
+func TestCreateNetworkInterface(t *testing.T) {
+	args := &CreateNetworkInterfaceArgs{
+		RegionId:                       common.Shanghai,
+		VSwitchId:                      "vsw-xxx",
+		SecurityGroupIds:               []string{"sg-xxx", "sg-yyy"},
+		SecondaryPrivateIpAddressCount: 9,
+	}
+	client := NewTestClient()
+	resp, err := client.CreateNetworkInterface(args)
+	if err != nil {
+		t.Errorf("failed to CreateNetworkInterface: %v", err)
+	}
+	t.Logf("new eni info: %+v", resp)
 }
