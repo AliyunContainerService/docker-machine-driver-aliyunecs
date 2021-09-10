@@ -1,0 +1,14 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "fJe2fih0EJYdVIzGoOVr9EqKtEM=",
+			"origin": "github.com/AliyunContainerService/docker-machine-driver-aliyunecs/vendor/github.com/denverdino/aliyungo/ecs",
+			"path": "github.com/denverdino/aliyungo/ecs",
+			"revision": "90ba29995421339f62a9c95db645756ade4f2228",
+			"revisionTime": "2021-09-10T07:45:42Z"
+		}
+	],
+	"rootPath": "github.com/AliyunContainerService/docker-machine-driver-aliyunecs"
+}

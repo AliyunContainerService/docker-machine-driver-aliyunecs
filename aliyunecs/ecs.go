@@ -82,6 +82,7 @@ type Driver struct {
 	APIEndpoint             string
 	SystemDiskCategory      ecs.DiskCategory
 	SystemDiskSize          int
+	ResourceGroupId string
 
 	client    *ecs.Client
 	slbClient *slb.Client
@@ -247,6 +248,13 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			Value:  "",
 			EnvVar: "ECS_API_ENDPOINT",
 		},
+		mcnflag.StringFlag{
+			Name:   "aliyunecs-resource-group-id",
+			Usage:  "ResourceGroupId for instance",
+			Value:  "",
+			EnvVar: "ECS_RESOURCE_GROUP_ID",
+		},
+
 	}
 }
 
@@ -337,6 +345,7 @@ func (d *Driver) SetConfigFromFlags(flags drivers.DriverOptions) error {
 	d.DiskSize = flags.Int("aliyunecs-disk-size")
 	d.DiskFS = flags.String("aliyunecs-disk-fs")
 	d.DiskCategory = ecs.DiskCategory(flags.String("aliyunecs-disk-category"))
+	d.ResourceGroupId = flags.String("aliyunecs-resource-group-id")
 	tags := flags.StringSlice("aliyunecs-tag")
 	//upgradeKernel := false //flags.Bool("aliyunecs-upgrade-kernel")
 	//if upgradeKernel {
@@ -511,6 +520,7 @@ func (d *Driver) Create() error {
 		ZoneId:                  d.Zone,
 		IoOptimized:             ioOptimized,
 		InternetMaxBandwidthOut: d.InternetMaxBandwidthOut,
+		ResourceGroupId: d.ResourceGroupId,
 		ClientToken:             d.getClient().GenerateClientToken(),
 	}
 
